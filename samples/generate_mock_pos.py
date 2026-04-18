@@ -1,19 +1,8 @@
-"""
-Generate synthetic customer purchase-order PDFs for local testing.
-
-This script is here so that anyone reviewing the repository can run the
-pipeline end-to-end without access to real customer documents. The layouts
-below are **fabricated**: they mimic the *shape* of real-world POs (text vs
-table, item-line conventions, date formats, currency quirks) but every
-customer name, address, part number and price is invented.
-
-Run:
-
-    python samples/generate_mock_pos.py --out samples/generated
-
-Each invocation produces a handful of PDFs — one per (customer, style)
-combination — ready to be fed to the dispatcher.
-"""
+# Generate synthetic PO PDFs so the pipeline can be demoed end-to-end
+# without touching real customer documents. Shapes mimic production; values
+# are all invented.
+#
+#   python samples/generate_mock_pos.py --out samples/generated
 
 from __future__ import annotations
 
