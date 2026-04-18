@@ -1,11 +1,5 @@
-"""
-Customer code -> canonical code mapping, and customer material -> internal
-SKU mapping.
-
-In production the SKU mapping table is loaded from a running Excel workbook
-(so sales ops can hot-edit it without redeploying anything). For the demo it
-is kept in memory; the shape of the lookup is identical.
-"""
+# Customer alias collapsing + SKU lookup. Production loads the SKU table
+# live from the running Excel workbook so ops can hot-edit without a deploy.
 
 from __future__ import annotations
 
@@ -24,7 +18,7 @@ class SkuEntry:
 
 
 class CustomerMapper:
-    """Collapse alias codes to canonical customer codes."""
+    """Collapse alias codes -> canonical customer codes."""
 
     def __init__(self):
         self._aliases = build_alias_lookup()
@@ -35,13 +29,7 @@ class CustomerMapper:
 
 
 class SkuLookup:
-    """
-    Bidirectional lookup keyed by ``(customer_code, module_or_customer_key)``.
-
-    The production version loads this from the target Excel workbook (the
-    "Open Order" file sales ops maintain). The demo version takes a list of
-    entries directly.
-    """
+    """Lookup keyed by (customer_code, module_or_customer_key)."""
 
     def __init__(self, entries: Iterable[Tuple[str, SkuEntry]] | None = None):
         self._db: Dict[Tuple[str, str], SkuEntry] = {}
@@ -66,10 +54,7 @@ class SkuLookup:
 
 
 def enrich_rows(rows, sku_lookup: SkuLookup, mapper: CustomerMapper) -> int:
-    """Fill in the canonical internal SKU for every row we can match.
-
-    Returns the number of rows that were successfully mapped.
-    """
+    """Fill internal SKU for every row we can match. Returns match count."""
     matched = 0
     for row in rows:
         cust = mapper.canonical(row.get("Sold-to Party", ""))

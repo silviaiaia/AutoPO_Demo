@@ -1,19 +1,5 @@
-"""
-Parser for *Customer-B* — a representative "table-layout" PO.
-
-Where Customer-A lays out each line item as a run of words on a single text
-line, Customer-B ships a real tabular PDF with clear column headers:
-
-    PO#  |  PO Date  |  Item Code  |  Item Name  |  Qty  |  Unit Price  |  Currency  |  Required Arrival Date
-
-That makes it a very different parsing problem: we rely on
-``pdfplumber.extract_tables`` and map columns by header name rather than by
-position, which makes the parser robust against template tweaks.
-
-The currency column introduces a second quirk — the customer sometimes
-quotes prices in US cents (``USC``) instead of dollars, so we divide by 100
-when we see that flag.
-"""
+# Customer-B: tabular PO. Columns mapped by header name so template tweaks
+# don't break the parser. Currency "USC" means US cents -> divide by 100.
 
 from __future__ import annotations
 
@@ -74,7 +60,7 @@ class CustomerBParser(BaseParser):
 
     @staticmethod
     def _map_header(table) -> Optional[dict]:
-        """Translate the first row of the table into a column->index map."""
+        # First row of the table -> {field_name: column_index}.
         if not table:
             return None
         header = [str(c or "").strip().upper() for c in table[0]]
