@@ -1,11 +1,5 @@
-"""
-Command-line entry point for headless / CI runs.
-
-    python -m autopo.cli ingest samples/generated/ --workbook out/open_order.xlsx
-
-It wires the dispatcher, parsers, mapper and Excel writer together — the
-same glue the GUI uses, but without the Tk dependency.
-"""
+# CLI entry point.
+#   python -m autopo.cli ingest samples/generated/ --workbook out/open_order.xlsx
 
 from __future__ import annotations
 
@@ -19,7 +13,7 @@ from autopo.parsers import Dispatcher, ParserNotFound
 
 
 def _demo_sku_lookup() -> SkuLookup:
-    """Small fake SKU table so mapping has something to match against."""
+    # Tiny fake SKU table so the demo shows non-zero match counts.
     entries = [
         ("10001", SkuEntry(material="INT-0001", module_material="ATP-1234-A10", customer_material="C123-4567")),
         ("10002", SkuEntry(material="INT-0002", module_material="SKU-5678-B20", customer_material="C234-5678")),

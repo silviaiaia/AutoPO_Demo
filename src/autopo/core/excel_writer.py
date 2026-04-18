@@ -1,15 +1,6 @@
-"""
-Write parsed PO rows into the "Open Order" tracking workbook.
-
-The production AutoPO talks to a live Excel session via xlwings so that sales
-ops can see rows appear under their cursor in real time. That binds the
-project to Windows + a running Excel instance, which isn't useful for a demo
-that has to run on any developer's laptop.
-
-The portfolio version therefore does the same job with openpyxl against a
-file on disk. The row-by-row append and column alignment logic is otherwise
-identical.
-"""
+# Append parsed rows to the Open Order workbook.
+# Production uses xlwings against a live Excel session (Windows-only); the
+# demo uses openpyxl against a file on disk. Same row/column logic either way.
 
 from __future__ import annotations
 
@@ -39,7 +30,7 @@ def _default_headers() -> List[str]:
 
 
 def ensure_workbook(path: str | Path, sheet_name: str = "OpenOrder") -> Workbook:
-    """Load an existing workbook or create a new one with the right header."""
+    """Load an existing workbook or create a fresh one with headers."""
     path = Path(path)
     if path.exists():
         wb = load_workbook(path)
@@ -70,7 +61,7 @@ def append_rows(
     rows: Iterable[dict],
     sheet_name: str = "OpenOrder",
 ) -> int:
-    """Append ``rows`` to the target sheet and save. Returns count written."""
+    """Append rows to the target sheet; return count written."""
     path = Path(workbook_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     wb = ensure_workbook(path, sheet_name)

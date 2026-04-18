@@ -1,10 +1,4 @@
-"""
-Minimal Tkinter GUI — folder picker + workbook picker + a log pane.
-
-Keeps the look-and-feel of the production tool but drops the xlwings/Excel
-coupling so it runs on any OS. Everything heavy is delegated to
-:mod:`autopo.cli`.
-"""
+# Minimal Tkinter GUI: folder picker + workbook picker + log pane.
 
 from __future__ import annotations
 
