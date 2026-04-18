@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+
+# Build & caches
+build/
+dist/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated demo artefacts
+samples/generated/
+out/
+*.xlsx
+!tests/fixtures/*.xlsx
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
