@@ -1,11 +1,4 @@
-"""
-Base class for customer-specific PO parsers.
-
-Each customer issues POs in their own layout — different column orders,
-different units, different date formats, sometimes text-based, sometimes
-table-based. The base class captures what they all have in common; subclasses
-supply the per-customer logic.
-"""
+# Base class for customer parsers. Subclasses supply fingerprints + _extract.
 
 from __future__ import annotations
 
@@ -52,19 +45,17 @@ class BaseParser(ABC):
 
     @classmethod
     def detect(cls, text: str) -> bool:
-        """Return True if the given first-page text belongs to this customer."""
         upper = (text or "").upper()
         return any(fp.upper() in upper for fp in cls.fingerprints)
 
     def parse(self, pdf_path: str) -> List[PoRow]:
-        """Open the PDF and hand the document to ``_extract``."""
         with pdfplumber.open(pdf_path) as pdf:
             return self._extract(pdf)
 
-    # --------------------------------------------------------------- common --
+    # ------ common ------------------------------------------------------------
 
     def _common_row(self, po_number: str, po_date: str) -> PoRow:
-        """Return the row fields every line item for this customer shares."""
+        """Row fields every line item from this customer shares."""
         col = STANDARD_COLUMNS
         return {
             col["upload"]: "Y",
@@ -81,4 +72,4 @@ class BaseParser(ABC):
 
     @abstractmethod
     def _extract(self, pdf: pdfplumber.PDF) -> List[PoRow]:
-        """Pull out the line items from an already-open PDF."""
+        ...

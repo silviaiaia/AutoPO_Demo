@@ -1,16 +1,5 @@
-"""
-Parser for *Customer-A* — a representative "text-layout" PO.
-
-Format quirks we have to cope with:
-
-* PO number is printed as ``ORDER NO: 12345`` on the first page.
-* Line items start with a 2-to-4-digit item number and contain the literal
-  token ``PCS`` somewhere on the row.
-* Prices use US decimal notation (1,234.56).
-* Delivery date appears on a *separate* follow-up line prefixed with
-  ``Delivery date:`` and written in textual form ("Apr 19, 2025"). The
-  warehouse ships on Mondays, so the CRD is snapped to the Monday before.
-"""
+# Customer-A: free-text PO. Item lines contain "PCS"; delivery date arrives
+# as "Apr 19, 2025" on a follow-up line. CRD snaps to the previous Monday.
 
 from __future__ import annotations
 

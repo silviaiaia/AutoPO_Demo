@@ -1,11 +1,4 @@
-"""
-Dispatcher: given a PDF path, decide which customer parser to invoke.
-
-The strategy is simple: open the first page, lower-case its text, and ask
-each registered parser whether it recognises its fingerprint. First match
-wins. If no parser matches, we raise :class:`ParserNotFound` so the caller
-can surface a useful error to the operator.
-"""
+# Given a PDF, pick the parser whose fingerprint matches the first page.
 
 from __future__ import annotations
 
@@ -17,12 +10,10 @@ from autopo.parsers.base import BaseParser
 
 
 class ParserNotFound(Exception):
-    """Raised when no registered parser recognises the PDF's first page."""
+    pass
 
 
 class Dispatcher:
-    """Singleton-style helper that owns the list of registered parsers."""
-
     def __init__(self, parsers=None):
         self._parsers = parsers or BaseParser.all()
 
