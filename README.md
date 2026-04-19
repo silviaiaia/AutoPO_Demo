@@ -33,7 +33,11 @@ python -m autopo.gui
 
 ## Screenshots
 
+### GUI
+
 ![GUI](docs/screenshots/gui.png)
+
+### Output Excel
 
 ![Output Excel](docs/screenshots/excel.png)
 
