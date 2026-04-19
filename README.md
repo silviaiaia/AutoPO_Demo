@@ -35,7 +35,9 @@ python -m autopo.gui
 
 ### GUI
 
-![GUI](docs/screenshots/gui.png)
+<p align="center">
+  <img src="docs/screenshots/gui.png" width="600" alt="GUI">
+</p>
 
 ### Output Excel
 
