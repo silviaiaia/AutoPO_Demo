@@ -1,6 +1,3 @@
-# Value normalization shared by every parser. The "same" value arrives in
-# half a dozen shapes depending on the customer and their ERP.
-
 from __future__ import annotations
 
 import re
@@ -9,7 +6,6 @@ from typing import Optional
 
 
 def normalize_key(value, *, strip_spaces: bool = False) -> str:
-    """Normalize a string so near-duplicate spellings compare equal."""
     if value is None:
         return ""
     s = str(value).upper().strip().replace("\xa0", "")
@@ -19,14 +15,9 @@ def normalize_key(value, *, strip_spaces: bool = False) -> str:
         s = s.replace(" ", "").replace("-", "")
     return s
 
-
-# Same customer sometimes sends "03/04/2025" meaning DMY, sometimes MDY — so
-# each customer parser picks the right handler explicitly.
-
 _MONTHS = {
     "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
     "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
-    # common German / Dutch spellings we encountered in production
     "MAI": 5, "OKT": 10, "DEZ": 12,
 }
 
@@ -40,7 +31,6 @@ def _finalize(y: int, m: int, d: int) -> str:
 
 
 def parse_date_iso(text: str) -> Optional[str]:
-    """2025-04-19, 2025/04/19, 2025.04.19 -> YYYY/MM/DD."""
     m = re.match(r"^\s*(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s*$", text or "")
     if m:
         y, mo, d = map(int, m.groups())
@@ -49,7 +39,6 @@ def parse_date_iso(text: str) -> Optional[str]:
 
 
 def parse_date_dmy(text: str) -> Optional[str]:
-    """19.04.2025, 19/04/25 -> YYYY/MM/DD."""
     m = re.match(r"^\s*(\d{1,2})[-./\s](\d{1,2})[-./\s](\d{2,4})\s*$", text or "")
     if m:
         d, mo, y = map(int, m.groups())
@@ -58,7 +47,6 @@ def parse_date_dmy(text: str) -> Optional[str]:
 
 
 def parse_date_mdy(text: str) -> Optional[str]:
-    """04/19/2025 -> YYYY/MM/DD."""
     m = re.match(r"^\s*(\d{1,2})[-./\s](\d{1,2})[-./\s](\d{2,4})\s*$", text or "")
     if m:
         mo, d, y = map(int, m.groups())
@@ -67,7 +55,6 @@ def parse_date_mdy(text: str) -> Optional[str]:
 
 
 def parse_date_textual(text: str) -> Optional[str]:
-    """Apr 19, 2025 / 19 APR 2025 -> YYYY/MM/DD."""
     if not text:
         return None
     s = text.upper()
@@ -88,7 +75,6 @@ def parse_date_textual(text: str) -> Optional[str]:
 
 
 def parse_date(text: str) -> Optional[str]:
-    """Try every strategy in order; return None if none stuck."""
     for fn in (parse_date_iso, parse_date_textual, parse_date_dmy):
         result = fn(text)
         if result:
@@ -97,7 +83,6 @@ def parse_date(text: str) -> Optional[str]:
 
 
 def shift_to_monday(iso_date: str, weeks_offset: int = 0) -> str:
-    """Snap to the Monday of that ISO week (warehouse ships weekly)."""
     dt = datetime.strptime(iso_date, ISO)
     monday = dt.replace(hour=0, minute=0, second=0, microsecond=0)
     monday = monday.fromordinal(monday.toordinal() - monday.weekday())
@@ -107,19 +92,15 @@ def shift_to_monday(iso_date: str, weeks_offset: int = 0) -> str:
 
 
 def clean_number(text: str) -> str:
-    """Strip currency symbols; fix European vs US decimal separators."""
     if not text:
         return "0"
     s = re.sub(r"[^\d.,\-]", "", str(text))
     if "," in s and "." in s:
-        # The last of the two is assumed to be the decimal separator.
         if s.rfind(",") > s.rfind("."):
             s = s.replace(".", "").replace(",", ".")
         else:
             s = s.replace(",", "")
     elif "," in s:
-        # Ambiguous; if there are exactly two digits after the comma assume
-        # decimal, otherwise assume thousands.
         if re.match(r"^-?\d+,\d{1,2}$", s):
             s = s.replace(",", ".")
         else:

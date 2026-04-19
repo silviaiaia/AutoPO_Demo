@@ -1,6 +1,3 @@
-# Customer alias collapsing + SKU lookup. Production loads the SKU table
-# live from the running Excel workbook so ops can hot-edit without a deploy.
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,14 +9,12 @@ from autopo.core.normalize import normalize_key
 
 @dataclass(frozen=True)
 class SkuEntry:
-    material: str            # internal canonical SKU
-    module_material: str     # our module-level part number (printed on PO)
-    customer_material: str   # the customer's part number
+    material: str
+    module_material: str
+    customer_material: str
 
 
 class CustomerMapper:
-    """Collapse alias codes -> canonical customer codes."""
-
     def __init__(self):
         self._aliases = build_alias_lookup()
 
@@ -29,8 +24,6 @@ class CustomerMapper:
 
 
 class SkuLookup:
-    """Lookup keyed by (customer_code, module_or_customer_key)."""
-
     def __init__(self, entries: Iterable[Tuple[str, SkuEntry]] | None = None):
         self._db: Dict[Tuple[str, str], SkuEntry] = {}
         if entries:
@@ -54,7 +47,6 @@ class SkuLookup:
 
 
 def enrich_rows(rows, sku_lookup: SkuLookup, mapper: CustomerMapper) -> int:
-    """Fill internal SKU for every row we can match. Returns match count."""
     matched = 0
     for row in rows:
         cust = mapper.canonical(row.get("Sold-to Party", ""))

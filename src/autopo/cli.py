@@ -1,6 +1,3 @@
-# CLI entry point.
-#   python -m autopo.cli ingest samples/generated/ --workbook out/open_order.xlsx
-
 from __future__ import annotations
 
 import argparse
@@ -13,7 +10,6 @@ from autopo.parsers import Dispatcher, ParserNotFound
 
 
 def _demo_sku_lookup() -> SkuLookup:
-    # Tiny fake SKU table so the demo shows non-zero match counts.
     entries = [
         ("10001", SkuEntry(material="INT-0001", module_material="ATP-1234-A10", customer_material="C123-4567")),
         ("10002", SkuEntry(material="INT-0002", module_material="SKU-5678-B20", customer_material="C234-5678")),

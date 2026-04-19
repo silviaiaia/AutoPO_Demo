@@ -1,5 +1,3 @@
-"""Unit tests for autopo.core.normalize."""
-
 import pytest
 
 from autopo.core.normalize import (

@@ -1,5 +1,3 @@
-"""End-to-end smoke tests: generate a PDF, parse it, check invariants."""
-
 from __future__ import annotations
 
 import random
@@ -39,5 +37,4 @@ def test_customer_b_roundtrip(tmp_path: Path, rng):
     for row in rows:
         assert row["Sold-to Party"] == "10002"
         assert row["Order Quantity"] != ""
-        # The USC-to-USD division should have happened upstream.
         assert row.get("Unit Price Currency") in {"USD", ""}

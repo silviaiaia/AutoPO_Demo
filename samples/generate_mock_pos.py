@@ -1,8 +1,4 @@
-# Generate synthetic PO PDFs so the pipeline can be demoed end-to-end
-# without touching real customer documents. Shapes mimic production; values
-# are all invented.
-#
-#   python samples/generate_mock_pos.py --out samples/generated
+# Generate synthetic PO PDFs
 
 from __future__ import annotations
 
@@ -20,7 +16,6 @@ from reportlab.platypus import (
 )
 
 
-# --- Synthetic data -----------------------------------------------------------
 
 ADJECTIVES = ["Quantum", "Nimbus", "Apex", "Vertex", "Halcyon", "Orion"]
 NOUNS = ["Systems", "Dynamics", "Analytics", "Robotics", "Networks"]
@@ -34,7 +29,7 @@ def synth_customer_pn(rng: random.Random) -> str:
     return f"C{rng.randint(100, 999)}-{rng.randint(1000, 9999)}"
 
 
-# --- Layout 1: Customer-A (free-text layout) ---------------------------------
+# Customer-A
 
 def build_customer_a_pdf(out_path: Path, rng: random.Random, *, item_count: int = 5):
     styles = getSampleStyleSheet()
@@ -70,7 +65,7 @@ def build_customer_a_pdf(out_path: Path, rng: random.Random, *, item_count: int 
     doc.build(story)
 
 
-# --- Layout 2: Customer-B (tabular layout) -----------------------------------
+# Customer-B (tabular layout)
 
 def build_customer_b_pdf(out_path: Path, rng: random.Random, *, item_count: int = 4):
     styles = getSampleStyleSheet()
@@ -110,8 +105,6 @@ def build_customer_b_pdf(out_path: Path, rng: random.Random, *, item_count: int 
     story.append(table)
     doc.build(story)
 
-
-# --- Entrypoint ---------------------------------------------------------------
 
 LAYOUTS = {
     "customer_a": build_customer_a_pdf,

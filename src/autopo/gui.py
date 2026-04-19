@@ -1,5 +1,3 @@
-# Minimal Tkinter GUI: folder picker + workbook picker + log pane.
-
 from __future__ import annotations
 
 import threading
@@ -12,7 +10,7 @@ from autopo.core.mapper import CustomerMapper, SkuEntry, SkuLookup, enrich_rows
 from autopo.parsers import Dispatcher, ParserNotFound
 
 
-APP_TITLE = "AutoPO — Purchase Order Ingestion"
+APP_TITLE = "AutoPO"
 
 
 class AutoPoApp(tk.Tk):
@@ -26,8 +24,6 @@ class AutoPoApp(tk.Tk):
         self.workbook_var = tk.StringVar(value=str(Path("out/open_order.xlsx").resolve()))
 
         self._build_ui()
-
-    # ------------------------------------------------------------------ UI --
 
     def _build_ui(self) -> None:
         pad = {"padx": 8, "pady": 4}
@@ -54,8 +50,6 @@ class AutoPoApp(tk.Tk):
         self.log = tk.Text(self, height=20, wrap="word", font=("Courier", 10))
         self.log.pack(fill="both", expand=True, padx=8, pady=8)
         self.log.configure(state="disabled")
-
-    # --------------------------------------------------------------- logic --
 
     def _pick_source(self) -> None:
         folder = filedialog.askdirectory(title="Select folder containing PO PDFs")
@@ -100,8 +94,6 @@ class AutoPoApp(tk.Tk):
         try:
             dispatcher = Dispatcher()
             mapper = CustomerMapper()
-
-            # Demo in-memory SKU table.
             sku_lookup = SkuLookup()
             sku_lookup.add("10001", SkuEntry("INT-0001", "ATP-1234-A10", "C123-4567"))
             sku_lookup.add("10002", SkuEntry("INT-0002", "SKU-5678-B20", "C234-5678"))
@@ -125,7 +117,7 @@ class AutoPoApp(tk.Tk):
                           f"{len(rows)} row(s), {matched} matched")
 
             self._log(f"\nDone. Wrote {total} row(s) to {workbook}.")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             self._log(f"Error: {exc}")
         finally:
             self.run_btn.configure(state="normal")

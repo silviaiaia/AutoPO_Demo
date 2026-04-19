@@ -1,7 +1,3 @@
-# Append parsed rows to the Open Order workbook.
-# Production uses xlwings against a live Excel session (Windows-only); the
-# demo uses openpyxl against a file on disk. Same row/column logic either way.
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -61,15 +57,11 @@ def append_rows(
     rows: Iterable[dict],
     sheet_name: str = "OpenOrder",
 ) -> int:
-    """Append rows to the target sheet; return count written."""
     path = Path(workbook_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     wb = ensure_workbook(path, sheet_name)
     ws = wb[sheet_name]
-
-    # Use the existing header row if there is one.
     headers = [c.value for c in ws[1] if c.value] or _default_headers()
-    # Fill any missing cells so the header row is always complete.
     for idx, name in enumerate(_default_headers(), start=1):
         if ws.cell(row=1, column=idx).value is None:
             ws.cell(row=1, column=idx, value=name)

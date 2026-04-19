@@ -1,11 +1,6 @@
-# Canonical columns and customer registry. Production pulls this from the
-# ERP; the demo ships synthetic codes that mimic the shape.
-
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-
-# Every parser emits rows keyed by these values so the writer stays generic.
 STANDARD_COLUMNS: Dict[str, str] = {
     "upload": "Upload",
     "sales_doc": "Sales Document",
@@ -33,9 +28,6 @@ STANDARD_COLUMNS: Dict[str, str] = {
 
 DATE_COLUMNS = ["Customer Reference Date", "CRD", "ETD", "ETA"]
 
-
-# A customer can have multiple ERP codes (per ship-to branch, legacy entity,
-# etc). The mapper collapses them back to one canonical code.
 @dataclass(frozen=True)
 class Customer:
     code: str

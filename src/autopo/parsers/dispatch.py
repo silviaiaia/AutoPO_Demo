@@ -1,5 +1,3 @@
-# Given a PDF, pick the parser whose fingerprint matches the first page.
-
 from __future__ import annotations
 
 from typing import Type

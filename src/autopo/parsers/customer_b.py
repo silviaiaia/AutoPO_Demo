@@ -1,6 +1,3 @@
-# Customer-B: tabular PO. Columns mapped by header name so template tweaks
-# don't break the parser. Currency "USC" means US cents -> divide by 100.
-
 from __future__ import annotations
 
 import re
@@ -56,8 +53,6 @@ class CustomerBParser(BaseParser):
 
         return rows
 
-    # -- helpers ---------------------------------------------------------------
-
     @staticmethod
     def _map_header(table) -> Optional[dict]:
         # First row of the table -> {field_name: column_index}.
@@ -70,7 +65,6 @@ class CustomerBParser(BaseParser):
                 if key in cell:
                     mapping[field] = idx
                     break
-        # We require the minimum fields needed to make a row useful.
         if not all(f in mapping for f in ("item_name", "qty")):
             return None
         return mapping
@@ -92,7 +86,6 @@ class CustomerBParser(BaseParser):
         row = dict(base)
         row[col["customer_ref"]] = get("po") or row[col["customer_ref"]]
 
-        # PO date may be ISO or DMY depending on the branch; try both.
         po_date = get("po_date")
         row[col["customer_ref_date"]] = (
             parse_date_iso(po_date) or parse_date_dmy(po_date) or po_date
@@ -103,7 +96,6 @@ class CustomerBParser(BaseParser):
         row[col["module_material"]] = item_name
         row[col["order_qty"]] = clean_number(get("qty"))
 
-        # Unit price + currency
         price = clean_number(get("price"))
         currency = get("currency").upper()
         if price:

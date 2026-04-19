@@ -1,6 +1,3 @@
-# Customer-A: free-text PO. Item lines contain "PCS"; delivery date arrives
-# as "Apr 19, 2025" on a follow-up line. CRD snaps to the previous Monday.
-
 from __future__ import annotations
 
 import re
@@ -53,9 +50,6 @@ class CustomerAParser(BaseParser):
                 row[col["customer_po_item"]] = item_no
 
                 tokens = [t for t in line.split() if t.upper() != "PCS"]
-                # After stripping the noise tokens, the customer part number
-                # is the second word and the unit price is the second-to-last
-                # numeric token.
                 row[col["customer_material"]] = tokens[1] if len(tokens) > 1 else ""
 
                 qty_match = re.search(r"([\d.,]+)\s*PCS", line, re.IGNORECASE)
@@ -67,7 +61,6 @@ class CustomerAParser(BaseParser):
                     row[col["original_unit_price"]] = price
                     row[col["unit_price"]] = price
 
-                # Delivery date on a follow-up line (look ahead up to 10).
                 row[col["crd"]] = self._find_crd(lines, i)
                 row[col["sales_doc_item"]] = str((len(rows) + 1) * 10)
                 rows.append(row)
