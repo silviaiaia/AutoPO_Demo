@@ -16,19 +16,64 @@ This repository is a **sanitized public demo**. Customer names, part numbers, pr
 
 ## Quick start
 
+**Requirements:** Python 3.10 or newer.
+
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python3 --version   # must be 3.10+
+```
+
+### macOS / Linux
+
+```bash
+git clone https://github.com/silviaiaia/AutoPO_Demo.git
+cd AutoPO_Demo
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install --upgrade pip
 pip install -e .
 
 # generate synthetic PDFs, then ingest them
-python3 samples/generate_mock_pos.py --out samples/generated
-python3 -m autopo.cli ingest samples/generated/ --workbook out/open_order.xlsx
+mkdir -p out
+python samples/generate_mock_pos.py --out samples/generated
+python -m autopo.cli ingest samples/generated/ --workbook out/open_order.xlsx
 ```
 
-Or launch the GUI:
+### Windows (PowerShell)
+
+```powershell
+git clone https://github.com/silviaiaia/AutoPO_Demo.git
+cd AutoPO_Demo
+
+py -3 -m venv .venv
+.venv\Scripts\Activate.ps1
+
+pip install --upgrade pip
+pip install -e .
+
+# generate synthetic PDFs, then ingest them
+mkdir out
+python samples\generate_mock_pos.py --out samples\generated
+python -m autopo.cli ingest samples\generated\ --workbook out\open_order.xlsx
+```
+
+The result is written to `out/open_order.xlsx`.
+
+### GUI
 
 ```bash
 python -m autopo.gui
+```
+
+> On macOS, the Tkinter GUI needs Tk installed alongside Python.
+> With Homebrew: `brew install python-tk`
+
+## Tests
+
+```bash
+pip install -e ".[dev]"
+pytest
 ```
 
 ## Screenshots
