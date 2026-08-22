@@ -18,17 +18,15 @@ This repository is a **sanitized public demo**. Customer names, part numbers, pr
 
 **Requirements:** Python 3.10 or newer.
 
+Check what you have:
+
 ```bash
 python3 --version
 ```
 
-macOS ships with Python 3.9, which is too old. If your version is below 3.10,
-install a newer one and use it explicitly when creating the venv:
-
-```bash
-brew install python@3.12
-python3.12 -m venv .venv
-```
+If it's 3.10 or newer, use `python3` in the venv step below. If it's older
+(macOS ships 3.9), install a newer one and use that binary instead —
+`brew install python@3.12` gives you `python3.12`.
 
 ### macOS / Linux
 
@@ -36,13 +34,12 @@ python3.12 -m venv .venv
 git clone https://github.com/silviaiaia/AutoPO_Demo.git
 cd AutoPO_Demo
 
-python3.12 -m venv .venv
+python3 -m venv .venv      # or python3.12, python3.11, ... — see above
 source .venv/bin/activate
 
 pip install --upgrade pip
 pip install -e .
 
-mkdir -p out
 python samples/generate_mock_pos.py --out samples/generated
 python -m autopo.cli ingest samples/generated/ --workbook out/open_order.xlsx
 ```
