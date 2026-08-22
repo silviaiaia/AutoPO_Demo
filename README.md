@@ -87,7 +87,7 @@ python -m autopo.gui
 
 ## Screenshots
 
-### GUI
+### AutoPO GUI
 
 <p align="center">
   <img src="docs/screenshots/gui.png" width="600" alt="GUI">
