@@ -8,11 +8,11 @@ This repository is a **sanitized public demo**. Customer names, part numbers, pr
 
 ## Impact
 
-| Metric                            | Before  | After  |
-| :-------------------------------- | :------ | :----- |
-| PO entry time per region, per day | ~90 min | ~3 min |
-| Transcription errors per week     | 5–10    | ~0     |
-| Customer formats supported        | manual  | 30+    |
+| Metric                            | Before     | After  |
+| :-------------------------------- | :--------- | :----- |
+| PO entry time per region, per day | ~90 min    | ~3 min |
+| Transcription errors per week     | 5–10       | ~0     |
+| Customer formats supported        | 1 (manual) | 30+    |
 
 ## Quick start
 
@@ -27,7 +27,7 @@ install a newer one and use it explicitly when creating the venv:
 
 ```bash
 brew install python@3.12
-python3.12 -m venv .venv        # instead of python3 -m venv .venv
+python3.12 -m venv .venv
 ```
 
 ### macOS / Linux
@@ -36,13 +36,12 @@ python3.12 -m venv .venv        # instead of python3 -m venv .venv
 git clone https://github.com/silviaiaia/AutoPO_Demo.git
 cd AutoPO_Demo
 
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 
 pip install --upgrade pip
 pip install -e .
 
-# generate synthetic PDFs, then ingest them
 mkdir -p out
 python samples/generate_mock_pos.py --out samples/generated
 python -m autopo.cli ingest samples/generated/ --workbook out/open_order.xlsx
@@ -60,8 +59,7 @@ py -3 -m venv .venv
 pip install --upgrade pip
 pip install -e .
 
-# generate synthetic PDFs, then ingest them
-mkdir out
+mkdir out -Force
 python samples\generate_mock_pos.py --out samples\generated
 python -m autopo.cli ingest samples\generated\ --workbook out\open_order.xlsx
 ```
