@@ -63,3 +63,17 @@ def enrich_rows(rows, sku_lookup: SkuLookup, mapper: CustomerMapper) -> int:
                 matched += 1
                 break
     return matched
+
+def build_default_sku_lookup() -> SkuLookup:
+    from autopo.config import SKU_TABLE
+    return SkuLookup(
+        (
+            e["customer"],
+            SkuEntry(
+                material=e["material"],
+                module_material=e["module_material"],
+                customer_material=e["customer_material"],
+            ),
+        )
+        for e in SKU_TABLE
+    )

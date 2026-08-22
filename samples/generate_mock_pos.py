@@ -1,6 +1,7 @@
 # Generate synthetic PO PDFs
 
 from __future__ import annotations
+from autopo.config import SKU_TABLE
 
 import argparse
 import random
@@ -21,12 +22,8 @@ ADJECTIVES = ["Quantum", "Nimbus", "Apex", "Vertex", "Halcyon", "Orion"]
 NOUNS = ["Systems", "Dynamics", "Analytics", "Robotics", "Networks"]
 
 
-def synth_part_number(rng: random.Random, prefix: str = "ATP") -> str:
-    return f"{prefix}-{rng.randint(1000, 9999)}-{rng.choice('ABCDE')}{rng.randint(10, 99)}"
-
-
-def synth_customer_pn(rng: random.Random) -> str:
-    return f"C{rng.randint(100, 999)}-{rng.randint(1000, 9999)}"
+def catalogue_for(customer_code: str):
+    return [e for e in SKU_TABLE if e["customer"] == customer_code]
 
 
 # Customer-A
@@ -46,9 +43,10 @@ def build_customer_a_pdf(out_path: Path, rng: random.Random, *, item_count: int 
     story.append(Spacer(1, 12))
 
     # Item lines are free-text: "<item#> <part> <qty> PCS <price> <amount>"
-    for n in range(1, item_count + 1):
-        part = synth_part_number(rng)
-        cust_pn = synth_customer_pn(rng)
+    items = rng.sample(catalogue_for("10001"), item_count)
+    for n, entry in enumerate(items, 1):
+        cust_pn = entry["customer_material"]
+        part = entry["material"]
         qty = rng.randint(10, 200)
         price = round(rng.uniform(25, 499), 2)
         amount = round(qty * price, 2)
@@ -83,9 +81,10 @@ def build_customer_b_pdf(out_path: Path, rng: random.Random, *, item_count: int 
     data: List[List[str]] = [header]
 
     po_date = datetime.now().strftime("%Y/%m/%d")
-    for _ in range(item_count):
-        cust_pn = synth_customer_pn(rng)
-        part = synth_part_number(rng, prefix="SKU")
+    items = rng.sample(catalogue_for("10002"), item_count)
+    for entry in items:
+        cust_pn = entry["customer_material"]
+        part = entry["module_material"]
         qty = rng.randint(5, 120)
         use_cents = rng.random() < 0.3
         price = rng.randint(50, 500) * (100 if use_cents else 1)

@@ -5,19 +5,8 @@ import sys
 from pathlib import Path
 
 from autopo.core.excel_writer import append_rows
-from autopo.core.mapper import CustomerMapper, SkuEntry, SkuLookup, enrich_rows
+from autopo.core.mapper import CustomerMapper, enrich_rows, build_default_sku_lookup
 from autopo.parsers import Dispatcher, ParserNotFound
-
-
-def _demo_sku_lookup() -> SkuLookup:
-    entries = [
-        ("10001", SkuEntry(material="INT-0001", module_material="ATP-1234-A10", customer_material="C123-4567")),
-        ("10002", SkuEntry(material="INT-0002", module_material="SKU-5678-B20", customer_material="C234-5678")),
-    ]
-    lookup = SkuLookup()
-    for code, entry in entries:
-        lookup.add(code, entry)
-    return lookup
 
 
 def cmd_ingest(args: argparse.Namespace) -> int:
@@ -36,7 +25,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 
     dispatcher = Dispatcher()
     mapper = CustomerMapper()
-    sku_lookup = _demo_sku_lookup()
+    sku_lookup = build_default_sku_lookup()
 
     total = 0
     for pdf in pdfs:

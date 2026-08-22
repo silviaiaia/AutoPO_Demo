@@ -6,7 +6,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from autopo.core.excel_writer import append_rows
-from autopo.core.mapper import CustomerMapper, SkuEntry, SkuLookup, enrich_rows
+from autopo.core.mapper import CustomerMapper, SkuEntry, SkuLookup, enrich_rows, build_default_sku_lookup
 from autopo.parsers import Dispatcher, ParserNotFound
 
 
@@ -94,7 +94,7 @@ class AutoPoApp(tk.Tk):
         try:
             dispatcher = Dispatcher()
             mapper = CustomerMapper()
-            sku_lookup = SkuLookup()
+            sku_lookup = build_default_sku_lookup()
             sku_lookup.add("10001", SkuEntry("INT-0001", "ATP-1234-A10", "C123-4567"))
             sku_lookup.add("10002", SkuEntry("INT-0002", "SKU-5678-B20", "C234-5678"))
 
