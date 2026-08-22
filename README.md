@@ -19,7 +19,15 @@ This repository is a **sanitized public demo**. Customer names, part numbers, pr
 **Requirements:** Python 3.10 or newer.
 
 ```bash
-python3 --version   # must be 3.10+
+python3 --version
+```
+
+macOS ships with Python 3.9, which is too old. If your version is below 3.10,
+install a newer one and use it explicitly when creating the venv:
+
+```bash
+brew install python@3.12
+python3.12 -m venv .venv        # instead of python3 -m venv .venv
 ```
 
 ### macOS / Linux
@@ -58,6 +66,19 @@ python samples\generate_mock_pos.py --out samples\generated
 python -m autopo.cli ingest samples\generated\ --workbook out\open_order.xlsx
 ```
 
+Expected output:
+
+```
+Generated 4 synthetic PO(s) in samples/generated/
+
+[Customer-A] customer_a_po_1.pdf: 5 line(s), 5 SKU match(es)
+[Customer-A] customer_a_po_2.pdf: 5 line(s), 5 SKU match(es)
+[Customer-B] customer_b_po_1.pdf: 4 line(s), 4 SKU match(es)
+[Customer-B] customer_b_po_2.pdf: 4 line(s), 4 SKU match(es)
+
+Wrote 18 row(s) to out/open_order.xlsx
+```
+
 The result is written to `out/open_order.xlsx`.
 
 ### GUI
@@ -68,13 +89,6 @@ python -m autopo.gui
 
 > On macOS, the Tkinter GUI needs Tk installed alongside Python.
 > With Homebrew: `brew install python-tk`
-
-## Tests
-
-```bash
-pip install -e ".[dev]"
-pytest
-```
 
 ## Screenshots
 
@@ -121,6 +135,7 @@ New customers are added by dropping another `BaseParser` subclass into
 ## Tests
 
 ```bash
+pip install -e ".[dev]"
 pytest
 ```
 
