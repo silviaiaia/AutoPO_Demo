@@ -2,7 +2,7 @@
 
 Python pipeline that reads customer purchase order PDFs, extracts line items, reconciles them against an internal SKU table, and appends them to the operations team's shipment-tracking Excel workbook.
 
-This system was originally built at a mid-sized electronics manufacturer to replace a manual copy-paste workflow that took ~90 minutes per day per region. The production version now handles 30+ customer PO formats across 5 regional workbooks and is used daily by 4 sales-operations teams in APAC, EU, US and JP.
+This system was originally built at a mid-sized electronics manufacturer to replace a manual copy-paste workflow that took ~90 minutes per day per region. The production version now handles 60+ customer PO formats across 5 regional workbooks and is used daily by 4 sales-operations teams in APAC, EU, US and JP.
 
 This repository is a **sanitized public demo**. Customer names, part numbers, prices and ERP codes are all synthetic. Two representative parsers — _Customer-A_ and _Customer-B_ — stand in for the two archetypes of PO PDF encountered.
 
