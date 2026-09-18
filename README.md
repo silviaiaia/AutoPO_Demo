@@ -1,5 +1,9 @@
 # AutoPO
 
+[![tests](https://github.com/silviaiaia/AutoPO_Demo/actions/workflows/tests.yml/badge.svg)](https://github.com/silviaiaia/AutoPO_Demo/actions/workflows/tests.yml)
+[![python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/silviaiaia/AutoPO_Demo/actions/workflows/tests.yml)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Python pipeline that reads customer purchase order PDFs, extracts line items, reconciles them against an internal SKU table, and appends them to the operations team's shipment-tracking Excel workbook.
 
 This system was originally built at a mid-sized electronics manufacturer to replace a manual copy-paste workflow that took ~90 minutes per day per region. The production version now handles 60+ customer PO formats across 5 regional workbooks and is used daily by 4 sales-operations teams in APAC, EU, US and JP.
@@ -133,6 +137,30 @@ New customers are added by dropping another `BaseParser` subclass into
 pip install -e ".[dev]"
 pytest
 ```
+
+With coverage:
+
+```bash
+pytest --cov --cov-report=term-missing
+```
+
+142 tests, 100% statement coverage of everything except the Tkinter front-end
+(which has no assertable behaviour without a display server). Every push runs
+them on Python 3.10 through 3.13 — see
+[`.github/workflows/tests.yml`](.github/workflows/tests.yml).
+
+| Suite                    | What it pins down                                                          |
+| :----------------------- | :------------------------------------------------------------------------- |
+| `test_normalize.py`      | Date formats (ISO / D-M-Y / M-D-Y / textual, incl. German months), thousands-vs-decimal separators, week-start snapping |
+| `test_parsers.py`        | Both PO layouts field by field — CRD lead time, US-cent prices, dropped spacer rows, unreadable dates |
+| `test_mapper.py`         | Customer-alias collapsing and SKU matching across inconsistent part-number spellings |
+| `test_excel_writer.py`   | Headers written once, appends accumulate, date columns formatted           |
+| `test_dispatch.py`       | Fingerprint routing, and that an unrecognised PDF is reported rather than guessed at |
+| `test_cli.py`            | The full `ingest` run end to end, plus its exit codes                      |
+
+Parser tests build their own PO PDFs (`tests/factories.py`) with fixed
+quantities, prices and dates, so assertions can name an exact CRD or unit
+price rather than settling for "something was extracted".
 
 ## License
 
