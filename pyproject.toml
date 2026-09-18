@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0"]
 
 [project.scripts]
 autopo = "autopo.cli:main"
@@ -28,3 +28,12 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "."]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+source = ["autopo"]
+# Tkinter front-end: nothing to assert without a display server.
+omit = ["*/autopo/gui.py"]
+
+[tool.coverage.report]
+exclude_also = ["if __name__ == .__main__.:"]
