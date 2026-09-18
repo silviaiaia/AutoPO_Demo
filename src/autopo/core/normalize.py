@@ -24,10 +24,15 @@ _MONTHS = {
 ISO = "%Y/%m/%d"
 
 
-def _finalize(y: int, m: int, d: int) -> str:
+def _finalize(y: int, m: int, d: int) -> Optional[str]:
     if y < 100:
         y += 2000
-    return f"{y:04d}/{m:02d}/{d:02d}"
+    try:
+        return datetime(y, m, d).strftime(ISO)
+    except ValueError:
+        # Not a real calendar date -- most often a D/M/Y reading of a date
+        # that was written M/D/Y. Let the caller try the next format.
+        return None
 
 
 def parse_date_iso(text: str) -> Optional[str]:
@@ -75,7 +80,7 @@ def parse_date_textual(text: str) -> Optional[str]:
 
 
 def parse_date(text: str) -> Optional[str]:
-    for fn in (parse_date_iso, parse_date_textual, parse_date_dmy):
+    for fn in (parse_date_iso, parse_date_textual, parse_date_dmy, parse_date_mdy):
         result = fn(text)
         if result:
             return result
