@@ -151,6 +151,20 @@ class TestIngest:
         results = ingest(collect_pdfs(inbox), workbook).results
         assert [r.rows for r in results] == [0, 2, 1]
 
+    def test_real_parser_output_reaches_the_workbook_as_text(
+        self, inbox: Path, workbook: Path
+    ):
+        # The end-to-end version of the guarantee in core/excel_writer: the ERP
+        # importer rejects typed cells, so nothing a parser produces -- through
+        # normalisation, SKU enrichment and the writer -- may arrive as a
+        # number or a date.
+        ingest(collect_pdfs(inbox), workbook)
+        ws = load_workbook(workbook)["OpenOrder"]
+        for row in ws.iter_rows(min_row=2):
+            for cell in row:
+                if cell.value is not None:
+                    assert cell.data_type == "s", f"{cell.coordinate} is not text"
+
     def test_ingesting_nothing_is_not_an_error(self, workbook: Path):
         summary = ingest([], workbook)
         assert summary.total_rows == 0

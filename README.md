@@ -132,6 +132,12 @@ src/autopo/
 New customers are added by dropping another `BaseParser` subclass into
 `parsers/` — the dispatcher, mapper and writer need no changes.
 
+The Open Order workbook is the staging file for an ERP import, and that
+importer rejects typed cells — so every value is written as **text**, including
+quantities, prices and dates. Quantities therefore will not sum inside Excel.
+That is the trade the import requires, and the writer's tests lock it in so a
+well-meaning change to "fix" the types fails loudly rather than at upload.
+
 The CLI and the GUI are thin shells over `core/pipeline.py`; they differ only
 in how they report progress. A PDF the pipeline cannot fingerprint or cannot
 open — damaged, encrypted, or simply not a PDF — is reported and skipped, so
@@ -152,7 +158,7 @@ With coverage:
 pytest --cov --cov-report=term-missing
 ```
 
-165 tests, 100% statement coverage of everything except the Tkinter front-end
+171 tests, 100% statement coverage of everything except the Tkinter front-end
 (which has no assertable behaviour without a display server). Every push runs
 them on Python 3.10 through 3.13 — see
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml).
@@ -162,7 +168,7 @@ them on Python 3.10 through 3.13 — see
 | `test_normalize.py`      | Date formats (ISO / D-M-Y / M-D-Y / textual, incl. German months), thousands-vs-decimal separators, week-start snapping |
 | `test_parsers.py`        | Both PO layouts field by field — CRD lead time, US-cent prices, dropped spacer rows, unreadable dates |
 | `test_mapper.py`         | Customer-alias collapsing and SKU matching across inconsistent part-number spellings |
-| `test_excel_writer.py`   | Headers written once, appends accumulate, date columns formatted           |
+| `test_excel_writer.py`   | Headers written once, appends accumulate, every cell stays text for the ERP import |
 | `test_dispatch.py`       | Fingerprint routing, and that an unrecognised PDF is reported rather than guessed at |
 | `test_pipeline.py`       | The ingest run itself — progress callbacks, damaged and unrecognised files, totals |
 | `test_cli.py`            | The full `ingest` run end to end, plus its exit codes                      |

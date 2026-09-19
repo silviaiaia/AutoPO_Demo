@@ -26,6 +26,9 @@ STANDARD_COLUMNS: Dict[str, str] = {
     "currency": "Unit Price Currency",
 }
 
+# Columns that carry dates. Like every other column they reach the workbook as
+# text (YYYY/MM/DD) because the ERP importer rejects typed cells -- see
+# core/excel_writer -- and the writer's tests use this list to check that shape.
 DATE_COLUMNS = ["Customer Reference Date", "CRD", "ETD", "ETA"]
 
 @dataclass(frozen=True)
