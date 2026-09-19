@@ -16,7 +16,7 @@ This repository is a **sanitized public demo**. Customer names, part numbers, pr
 | :-------------------------------- | :--------- | :----- |
 | PO entry time per region, per day | ~90 min    | ~3 min |
 | Transcription errors per week     | 5–10       | ~0     |
-| Customer formats supported        | 1 (manual) | 30+    |
+| Customer formats supported        | 1 (manual) | 60+    |
 
 ## Quick start
 
@@ -45,7 +45,7 @@ pip install --upgrade pip
 pip install -e .
 
 python samples/generate_mock_pos.py --out samples/generated
-python -m autopo.cli ingest samples/generated/ --workbook out/open_order.xlsx
+autopo ingest samples/generated/ --workbook out/open_order.xlsx
 ```
 
 ### Windows (PowerShell)
@@ -60,9 +60,8 @@ py -3 -m venv .venv
 pip install --upgrade pip
 pip install -e .
 
-mkdir out -Force
 python samples\generate_mock_pos.py --out samples\generated
-python -m autopo.cli ingest samples\generated\ --workbook out\open_order.xlsx
+autopo ingest samples\generated\ --workbook out\open_order.xlsx
 ```
 
 Expected output:
@@ -78,12 +77,32 @@ Generated 4 synthetic PO(s) in samples/generated/
 Wrote 18 row(s) to out/open_order.xlsx
 ```
 
-The result is written to `out/open_order.xlsx`.
+The result is written to `out/open_order.xlsx` — the directory is created if
+it does not exist.
+
+`autopo` is installed by `pip install -e .`; `python -m autopo.cli ingest ...`
+is the same thing if you would rather not rely on the console script being on
+your PATH. `autopo ingest --help` lists the options.
+
+### Running it twice
+
+A PO that is already in the workbook is reported, not blocked:
+
+```
+[Customer-A] customer_a_po_1.pdf: 5 line(s), 5 SKU match(es)
+[warn      ] customer_a_po_1.pdf: 5 line(s) already in this workbook
+...
+
+Wrote 18 row(s) to out/open_order.xlsx (18 duplicate line(s))
+```
+
+The ERP import refuses a duplicate order at upload, so the rows still go in —
+the warning only means the operator hears about it now rather than later.
 
 ### GUI
 
 ```bash
-python -m autopo.gui
+autopo-gui
 ```
 
 > On macOS, the Tkinter GUI needs Tk installed alongside Python.
@@ -92,6 +111,10 @@ python -m autopo.gui
 ## Screenshots
 
 ### AutoPO GUI
+
+<!-- To refresh this shot: run `autopo-gui`, set the source to
+     samples/generated and the target to out/open_order.xlsx, press Ingest,
+     then capture the window and overwrite docs/screenshots/gui.png. -->
 
 <p align="center">
   <img src="docs/screenshots/gui.png" width="600" alt="GUI">

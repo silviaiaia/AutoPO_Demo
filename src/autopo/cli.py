@@ -55,8 +55,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     ingest_cmd = sub.add_parser("ingest", help="parse PDFs and append to a workbook")
     ingest_cmd.add_argument("source", help="PDF file or directory of PDFs")
-    ingest_cmd.add_argument("--workbook", default=DEFAULT_WORKBOOK)
-    ingest_cmd.add_argument("--sheet", default=DEFAULT_SHEET)
+    ingest_cmd.add_argument(
+        "--workbook",
+        default=DEFAULT_WORKBOOK,
+        help="workbook to append to; created if it does not exist "
+             f"(default: {DEFAULT_WORKBOOK})",
+    )
+    ingest_cmd.add_argument(
+        "--sheet",
+        default=DEFAULT_SHEET,
+        help=f"worksheet within the workbook (default: {DEFAULT_SHEET})",
+    )
     ingest_cmd.set_defaults(func=cmd_ingest)
 
     return p
