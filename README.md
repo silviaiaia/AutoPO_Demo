@@ -115,10 +115,6 @@ autopo-gui
 
 ### AutoPO GUI
 
-<!-- To refresh this shot: run `autopo-gui`, set the source to
-     samples/generated and the target to out/open_order.xlsx, press Ingest,
-     then capture the window and overwrite docs/screenshots/gui.png. -->
-
 <p align="center">
   <img src="docs/screenshots/gui.png" width="600" alt="GUI">
 </p>
@@ -198,15 +194,15 @@ pytest --cov --cov-report=term-missing
 them on Python 3.10 through 3.13 — see
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml).
 
-| Suite                    | What it pins down                                                          |
-| :----------------------- | :------------------------------------------------------------------------- |
-| `test_normalize.py`      | Date formats (ISO / D-M-Y / M-D-Y / textual, incl. German months), thousands-vs-decimal separators, week-start snapping |
-| `test_parsers.py`        | Both PO layouts field by field — CRD lead time, US-cent prices, dropped spacer rows, unreadable dates |
-| `test_mapper.py`         | Customer-alias collapsing and SKU matching across inconsistent part-number spellings |
-| `test_excel_writer.py`   | Headers written once, appends accumulate, every cell stays text for the ERP import |
-| `test_dispatch.py`       | Fingerprint routing, and that an unrecognised PDF is reported rather than guessed at |
-| `test_pipeline.py`       | The ingest run itself — progress callbacks, damaged and unrecognised files, totals |
-| `test_cli.py`            | The full `ingest` run end to end, plus its exit codes                      |
+| Suite                  | What it pins down                                                                                                       |
+| :--------------------- | :---------------------------------------------------------------------------------------------------------------------- |
+| `test_normalize.py`    | Date formats (ISO / D-M-Y / M-D-Y / textual, incl. German months), thousands-vs-decimal separators, week-start snapping |
+| `test_parsers.py`      | Both PO layouts field by field — CRD lead time, US-cent prices, dropped spacer rows, unreadable dates                   |
+| `test_mapper.py`       | Customer-alias collapsing and SKU matching across inconsistent part-number spellings                                    |
+| `test_excel_writer.py` | Headers written once, appends accumulate, every cell stays text for the ERP import                                      |
+| `test_dispatch.py`     | Fingerprint routing, and that an unrecognised PDF is reported rather than guessed at                                    |
+| `test_pipeline.py`     | The ingest run itself — progress callbacks, damaged and unrecognised files, totals                                      |
+| `test_cli.py`          | The full `ingest` run end to end, plus its exit codes                                                                   |
 
 Parser tests build their own PO PDFs (`tests/factories.py`) with fixed
 quantities, prices and dates, so assertions can name an exact CRD or unit
