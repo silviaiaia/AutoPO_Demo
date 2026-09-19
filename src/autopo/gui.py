@@ -144,7 +144,12 @@ class AutoPoApp(tk.Tk):
                 return
 
             summary = ingest(pdfs, workbook, on_file=self._report)
-            self._post(f"\nDone. Wrote {summary.total_rows} row(s) to {workbook}.")
+            skipped = (
+                f" {len(summary.skipped)} file(s) skipped." if summary.skipped else ""
+            )
+            self._post(
+                f"\nDone. Wrote {summary.total_rows} row(s) to {workbook}.{skipped}"
+            )
         except Exception as exc:
             self._post(f"Error: {exc}")
         finally:

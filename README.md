@@ -133,7 +133,9 @@ New customers are added by dropping another `BaseParser` subclass into
 `parsers/` — the dispatcher, mapper and writer need no changes.
 
 The CLI and the GUI are thin shells over `core/pipeline.py`; they differ only
-in how they report progress. Because Tk is not thread-safe, the GUI runs the
+in how they report progress. A PDF the pipeline cannot fingerprint or cannot
+open — damaged, encrypted, or simply not a PDF — is reported and skipped, so
+one bad file in the drop folder never costs the operator the rest of the batch. Because Tk is not thread-safe, the GUI runs the
 pipeline on a worker thread that never touches a widget — it posts messages to
 a queue that the main thread drains.
 
@@ -150,7 +152,7 @@ With coverage:
 pytest --cov --cov-report=term-missing
 ```
 
-159 tests, 100% statement coverage of everything except the Tkinter front-end
+165 tests, 100% statement coverage of everything except the Tkinter front-end
 (which has no assertable behaviour without a display server). Every push runs
 them on Python 3.10 through 3.13 — see
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml).
@@ -162,7 +164,7 @@ them on Python 3.10 through 3.13 — see
 | `test_mapper.py`         | Customer-alias collapsing and SKU matching across inconsistent part-number spellings |
 | `test_excel_writer.py`   | Headers written once, appends accumulate, date columns formatted           |
 | `test_dispatch.py`       | Fingerprint routing, and that an unrecognised PDF is reported rather than guessed at |
-| `test_pipeline.py`       | The ingest run itself — per-file progress callbacks, skipped files, totals  |
+| `test_pipeline.py`       | The ingest run itself — progress callbacks, damaged and unrecognised files, totals |
 | `test_cli.py`            | The full `ingest` run end to end, plus its exit codes                      |
 
 Parser tests build their own PO PDFs (`tests/factories.py`) with fixed

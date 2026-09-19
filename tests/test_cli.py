@@ -8,7 +8,13 @@ import pytest
 from openpyxl import load_workbook
 
 from autopo.cli import main
-from tests.factories import ItemA, build_a_pdf, build_b_pdf, build_plain_pdf
+from tests.factories import (
+    ItemA,
+    build_a_pdf,
+    build_b_pdf,
+    build_plain_pdf,
+    build_unreadable_pdf,
+)
 
 B_ROWS = [
     ["CB-64810", "2025/04/19", "C948-2452", "SKU-7919-E85", "59", "450", "USD", "2025/06/02"],
@@ -91,6 +97,31 @@ class TestUnhappyPaths:
         assert run("ingest", str(inbox), "--workbook", str(workbook)) == 0
         assert "[skip] memo.pdf" in capsys.readouterr().out
         assert load_workbook(workbook)["OpenOrder"].max_row == 4
+
+    def test_a_damaged_pdf_is_skipped_and_the_batch_still_succeeds(
+        self, inbox: Path, workbook: Path, capsys
+    ):
+        build_unreadable_pdf(inbox / "aaa_damaged.pdf")
+        assert run("ingest", str(inbox), "--workbook", str(workbook)) == 0
+
+        out = capsys.readouterr().out
+        assert "[skip] aaa_damaged.pdf" in out
+        assert "Wrote 3 row(s)" in out
+        assert load_workbook(workbook)["OpenOrder"].max_row == 4
+
+    def test_the_summary_counts_the_skipped_files(
+        self, inbox: Path, workbook: Path, capsys
+    ):
+        build_unreadable_pdf(inbox / "damaged.pdf")
+        build_plain_pdf(inbox / "memo.pdf")
+        run("ingest", str(inbox), "--workbook", str(workbook))
+        assert "(2 file(s) skipped)" in capsys.readouterr().out
+
+    def test_a_clean_run_says_nothing_about_skipping(
+        self, inbox: Path, workbook: Path, capsys
+    ):
+        run("ingest", str(inbox), "--workbook", str(workbook))
+        assert "skipped" not in capsys.readouterr().out
 
     def test_missing_source_exits_two(self, tmp_path: Path, workbook: Path, capsys):
         assert run("ingest", str(tmp_path / "nope"), "--workbook", str(workbook)) == 2

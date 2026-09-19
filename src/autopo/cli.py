@@ -34,7 +34,8 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         return 1
 
     summary = ingest(pdfs, args.workbook, sheet=args.sheet, on_file=_report)
-    print(f"\nWrote {summary.total_rows} row(s) to {args.workbook}")
+    skipped = f" ({len(summary.skipped)} file(s) skipped)" if summary.skipped else ""
+    print(f"\nWrote {summary.total_rows} row(s) to {args.workbook}{skipped}")
     return 0
 
 
