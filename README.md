@@ -20,17 +20,8 @@ This repository is a **sanitized public demo**. Customer names, part numbers, pr
 
 ## Quick start
 
-**Requirements:** Python 3.10 or newer.
-
-Check what you have:
-
-```bash
-python3 --version
-```
-
-If it's 3.10 or newer, use `python3` in the venv step below. If it's older
-(macOS ships 3.9), install a newer one and use that binary instead —
-`brew install python@3.12` gives you `python3.12`.
+**Requirements:** Python 3.10 or newer. Every release is tested on 3.10, 3.11,
+3.12 and 3.13 — use whichever of those you already have.
 
 ### macOS / Linux
 
@@ -38,7 +29,13 @@ If it's 3.10 or newer, use `python3` in the venv step below. If it's older
 git clone https://github.com/silviaiaia/AutoPO_Demo.git
 cd AutoPO_Demo
 
-python3 -m venv .venv      # or python3.12, python3.11, ... — see above
+# This project needs Python 3.10 or newer, and macOS ships 3.9.
+python3 --version
+
+# If that printed 3.9.x, swap `python3` below for a newer one you already have
+# -- python3.12, python3.13, anything 3.10+. `brew install python@3.12` gets
+# you one.
+python3 -m venv .venv
 source .venv/bin/activate
 
 pip install --upgrade pip
@@ -48,12 +45,19 @@ python samples/generate_mock_pos.py --out samples/generated
 autopo ingest samples/generated/ --workbook out/open_order.xlsx
 ```
 
+If the Python version is too old, `pip install -e .` stops with
+`Package 'autopo' requires a different Python`, and the two commands after it
+then fail with `No module named 'autopo'` because nothing was installed. Start
+over from the `venv` line with a newer interpreter.
+
 ### Windows (PowerShell)
 
 ```powershell
 git clone https://github.com/silviaiaia/AutoPO_Demo.git
 cd AutoPO_Demo
 
+# `py -3` picks your default Python; `py -0` lists them all. Use `py -3.12`
+# (or any 3.10+) if the default is older.
 py -3 -m venv .venv
 .venv\Scripts\Activate.ps1
 
