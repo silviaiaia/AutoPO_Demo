@@ -66,6 +66,35 @@ def _write_header(ws) -> None:
     ws.freeze_panes = "A2"
 
 
+def existing_rows(
+    workbook_path: str | Path,
+    sheet_name: str = "OpenOrder",
+) -> List[dict]:
+    """The data rows already in the workbook, as header -> value dicts.
+
+    A workbook or sheet that does not exist yet simply holds no rows.
+    """
+    path = Path(workbook_path)
+    if not path.exists():
+        return []
+
+    wb = load_workbook(path, read_only=True)
+    try:
+        if sheet_name not in wb.sheetnames:
+            return []
+        values = wb[sheet_name].iter_rows(values_only=True)
+        try:
+            headers = ["" if h is None else str(h) for h in next(values)]
+        except StopIteration:
+            return []
+        return [
+            {h: "" if v is None else str(v) for h, v in zip(headers, row) if h}
+            for row in values
+        ]
+    finally:
+        wb.close()
+
+
 def append_rows(
     workbook_path: str | Path,
     rows: Iterable[dict],

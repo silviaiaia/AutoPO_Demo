@@ -7,7 +7,7 @@ import pytest
 from openpyxl import load_workbook
 
 from autopo.config import DATE_COLUMNS
-from autopo.core.excel_writer import append_rows, ensure_workbook
+from autopo.core.excel_writer import append_rows, ensure_workbook, existing_rows
 
 ROW = {
     "Upload": "Y",
@@ -162,3 +162,41 @@ class TestErpImportFormat:
         # Guards against a rename in config.py drifting from the writer.
         append_rows(workbook_path, [ROW])
         assert set(DATE_COLUMNS) - {"ETA"} <= set(headers_of(workbook_path))
+
+
+class TestExistingRows:
+    """Reading back what a previous run already wrote."""
+
+    def test_no_workbook_yet_means_no_rows(self, workbook_path: Path):
+        assert existing_rows(workbook_path) == []
+
+    def test_a_sheet_that_does_not_exist_means_no_rows(self, workbook_path: Path):
+        append_rows(workbook_path, [ROW])
+        assert existing_rows(workbook_path, sheet_name="EU") == []
+
+    def test_a_completely_empty_sheet_means_no_rows(self, workbook_path: Path):
+        # ensure_workbook adds the sheet without a header row.
+        append_rows(workbook_path, [ROW])
+        wb = load_workbook(workbook_path)
+        wb.create_sheet("Blank")
+        wb.save(workbook_path)
+        assert existing_rows(workbook_path, sheet_name="Blank") == []
+
+    def test_a_headers_only_workbook_means_no_rows(self, workbook_path: Path):
+        append_rows(workbook_path, [])
+        assert existing_rows(workbook_path) == []
+
+    def test_rows_come_back_keyed_by_header(self, workbook_path: Path):
+        append_rows(workbook_path, [ROW])
+        (row,) = existing_rows(workbook_path)
+        assert row["Sold-to Party"] == "10001"
+        assert row["Order Quantity"] == "40"
+
+    def test_blank_cells_come_back_as_empty_strings(self, workbook_path: Path):
+        append_rows(workbook_path, [ROW])
+        (row,) = existing_rows(workbook_path)
+        assert row["Remark"] == ""
+
+    def test_every_written_row_comes_back(self, workbook_path: Path):
+        append_rows(workbook_path, [ROW, ROW, ROW])
+        assert len(existing_rows(workbook_path)) == 3

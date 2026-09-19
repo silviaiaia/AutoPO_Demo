@@ -41,6 +41,7 @@ def build_a_pdf(
     items: Sequence[ItemA],
     *,
     po_number: str = "242445",
+    po_date: str = "",
     header: str = "Customer-A Electronics",
 ) -> Path:
     """Customer-A layout: free text, one paragraph per field."""
@@ -51,6 +52,8 @@ def build_a_pdf(
     story = [Paragraph(f"<b>{header}</b>", styles["Title"])]
     if po_number:
         story.append(Paragraph(f"ORDER NO: {po_number}", styles["Heading2"]))
+    if po_date:
+        story.append(Paragraph(f"Date: {po_date}", styles["Normal"]))
     story.append(Spacer(1, 12))
     for n, item in enumerate(items, 1):
         story.append(

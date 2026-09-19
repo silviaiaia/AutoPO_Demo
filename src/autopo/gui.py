@@ -134,6 +134,9 @@ class AutoPoApp(tk.Tk):
         else:
             self._post(f"[{result.customer_label:10}] {result.path.name}: "
                        f"{result.rows} line(s), {result.matched} SKU match(es)")
+            if result.duplicates:
+                self._post(f"[warn      ] {result.path.name}: "
+                           f"{result.duplicates} line(s) already in this workbook")
 
     def _run_worker(self, source: str, workbook: str) -> None:
         """Runs off the main thread: no widget may be touched from here."""
@@ -144,11 +147,13 @@ class AutoPoApp(tk.Tk):
                 return
 
             summary = ingest(pdfs, workbook, on_file=self._report)
-            skipped = (
-                f" {len(summary.skipped)} file(s) skipped." if summary.skipped else ""
-            )
+            notes = ""
+            if summary.skipped:
+                notes += f" {len(summary.skipped)} file(s) skipped."
+            if summary.duplicates:
+                notes += f" {summary.duplicates} duplicate line(s)."
             self._post(
-                f"\nDone. Wrote {summary.total_rows} row(s) to {workbook}.{skipped}"
+                f"\nDone. Wrote {summary.total_rows} row(s) to {workbook}.{notes}"
             )
         except Exception as exc:
             self._post(f"Error: {exc}")

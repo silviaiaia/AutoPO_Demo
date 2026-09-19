@@ -11,7 +11,13 @@ from pathlib import Path
 import pytest
 from openpyxl import load_workbook
 
-from autopo.core.pipeline import FileResult, IngestSummary, collect_pdfs, ingest
+from autopo.core.pipeline import (
+    FileResult,
+    IngestSummary,
+    collect_pdfs,
+    ingest,
+    line_key,
+)
 from tests.factories import (
     ItemA,
     build_a_pdf,
@@ -187,3 +193,102 @@ class TestSummary:
 
     def test_a_parsed_file_is_not_marked_skipped(self):
         assert not FileResult(Path("a.pdf"), "Customer-A", rows=5).was_skipped
+
+
+class TestLineKey:
+    """What counts as the same PO line."""
+
+    def test_a_po_number_and_an_item_number(self):
+        assert line_key(
+            {"Customer Reference": "242445", "Customer PO Item No": "01"}
+        ) == ("242445", "01")
+
+    def test_the_part_number_stands_in_when_there_is_no_item_number(self):
+        # Customer-B's POs have no item number column at all; without this the
+        # lines of one PO would all collapse onto the same key.
+        # Part numbers are compared with spacing and hyphens removed, which is
+        # what makes a reprint that hyphenates differently key the same.
+        assert line_key(
+            {"Customer Reference": "CB-1", "Customer Material": "C948-2452"}
+        ) == ("CB-1", "C9482452")
+
+    def test_an_item_number_wins_over_the_part_number(self):
+        assert line_key(
+            {
+                "Customer Reference": "242445",
+                "Customer PO Item No": "01",
+                "Customer Material": "C460-3373",
+            }
+        ) == ("242445", "01")
+
+    def test_the_same_part_on_two_different_pos_is_two_lines(self):
+        a = line_key({"Customer Reference": "CB-1", "Customer Material": "C948-2452"})
+        b = line_key({"Customer Reference": "CB-2", "Customer Material": "C948-2452"})
+        assert a != b
+
+    def test_spelling_of_the_part_number_does_not_matter(self):
+        # The same PDF re-parsed must key identically; so must a reprint that
+        # hyphenates differently.
+        assert line_key(
+            {"Customer Reference": "cb-1", "Customer Material": "c948 2452"}
+        ) == line_key(
+            {"Customer Reference": "CB-1", "Customer Material": "C948-2452"}
+        )
+
+
+class TestDuplicateWarning:
+    """Duplicates are reported, never dropped.
+
+    The ERP import is the gatekeeper -- it refuses a PO it already holds -- so
+    the pipeline does not deduplicate. It just says so at ingest time instead
+    of leaving the operator to find out at upload.
+    """
+
+    def test_a_first_run_flags_nothing(self, inbox: Path, workbook: Path):
+        summary = ingest(collect_pdfs(inbox), workbook)
+        assert summary.duplicates == 0
+
+    def test_lines_of_one_po_are_not_mistaken_for_each_other(
+        self, inbox: Path, workbook: Path
+    ):
+        # Customer-A's PO has two lines and Customer-B's has one; none of them
+        # is a duplicate of another.
+        assert all(r.duplicates == 0 for r in ingest(collect_pdfs(inbox), workbook).results)
+
+    def test_reingesting_the_same_folder_flags_every_line(
+        self, inbox: Path, workbook: Path
+    ):
+        pdfs = collect_pdfs(inbox)
+        ingest(pdfs, workbook)
+        second = ingest(pdfs, workbook)
+        assert second.duplicates == 3
+
+    def test_a_duplicate_is_still_written(self, inbox: Path, workbook: Path):
+        pdfs = collect_pdfs(inbox)
+        ingest(pdfs, workbook)
+        ingest(pdfs, workbook)
+        # 1 header + 3 rows, twice over: flagged, not dropped.
+        assert load_workbook(workbook)["OpenOrder"].max_row == 7
+
+    def test_the_same_po_twice_in_one_batch_is_caught(self, inbox: Path, workbook: Path):
+        # The workbook on disk says nothing about this, so the check has to
+        # keep what it has seen during the run.
+        copy = inbox / "customer_b_again.pdf"
+        copy.write_bytes((inbox / "customer_b.pdf").read_bytes())
+        assert ingest(collect_pdfs(inbox), workbook).duplicates == 1
+
+    def test_a_different_po_from_the_same_customer_is_not_a_duplicate(
+        self, inbox: Path, workbook: Path
+    ):
+        ingest(collect_pdfs(inbox), workbook)
+        other = inbox.parent / "other.pdf"
+        build_b_pdf(
+            other,
+            [["CB-99999", "2025/04/19", "C948-2452", "SKU-7919-E85", "12", "450", "USD", "2025/06/02"]],
+        )
+        assert ingest([other], workbook).duplicates == 0
+
+    def test_a_separate_sheet_has_its_own_history(self, inbox: Path, workbook: Path):
+        pdfs = collect_pdfs(inbox)
+        ingest(pdfs, workbook)
+        assert ingest(pdfs, workbook, sheet="EU").duplicates == 0

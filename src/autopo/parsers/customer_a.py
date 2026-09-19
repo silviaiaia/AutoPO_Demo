@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
 from typing import List
 
 import pdfplumber
@@ -9,6 +8,7 @@ import pdfplumber
 from autopo.config import STANDARD_COLUMNS
 from autopo.core.normalize import (
     clean_number,
+    parse_date,
     parse_date_textual,
     shift_to_monday,
 )
@@ -23,6 +23,8 @@ class CustomerAParser(BaseParser):
 
     _ITEM_LINE_RE = re.compile(r"^\s*(\d+)\s+\S+.*\bPCS\b", re.IGNORECASE)
     _PO_RE = re.compile(r"ORDER\s*NO[.:]*\s*(\w+)", re.IGNORECASE)
+    # Anchored at the start of a line so "Delivery date:" cannot match.
+    _PO_DATE_RE = re.compile(r"^\s*Date[:\s]+(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
     _DELIVERY_RE = re.compile(
         r"Delivery\s*date[:\s]*([A-Za-z]{3}\s*\d{1,2}\s*,\s*\d{4})",
         re.IGNORECASE,
@@ -36,7 +38,10 @@ class CustomerAParser(BaseParser):
         m = self._PO_RE.search(first_text)
         po_number = m.group(1) if m else "UNKNOWN"
 
-        base = self._common_row(po_number, datetime.now().strftime("%Y/%m/%d"))
+        date_match = self._PO_DATE_RE.search(first_text)
+        po_date = parse_date(date_match.group(1)) if date_match else None
+
+        base = self._common_row(po_number, po_date or "")
 
         for page in pdf.pages:
             text = page.extract_text() or ""
