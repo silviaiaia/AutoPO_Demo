@@ -1,19 +1,32 @@
 from __future__ import annotations
 
+import queue
 import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-from autopo.core.excel_writer import append_rows
-from autopo.core.mapper import CustomerMapper, SkuEntry, SkuLookup, enrich_rows, build_default_sku_lookup
-from autopo.parsers import Dispatcher, ParserNotFound
-
+from autopo.core.pipeline import DEFAULT_WORKBOOK, FileResult, collect_pdfs, ingest
 
 APP_TITLE = "AutoPO"
 
+# How often the main thread drains the worker's messages.
+_POLL_MS = 100
+
+# Posted by the worker when it has finished, however it finished.
+_RUN_FINISHED = object()
+
 
 class AutoPoApp(tk.Tk):
+    """Tk front-end over autopo.core.pipeline.
+
+    Tk is not thread-safe: only the thread that created a widget may touch it.
+    The ingest run therefore happens on a worker thread that never calls a
+    widget directly -- it puts messages on `self._events`, and `_drain_events`
+    (which the main thread reschedules onto itself) is the single place where
+    the log pane and the button are updated.
+    """
+
     def __init__(self):
         super().__init__()
         self.title(APP_TITLE)
@@ -21,9 +34,11 @@ class AutoPoApp(tk.Tk):
         self.resizable(True, True)
 
         self.source_var = tk.StringVar()
-        self.workbook_var = tk.StringVar(value=str(Path("out/open_order.xlsx").resolve()))
+        self.workbook_var = tk.StringVar(value=str(Path(DEFAULT_WORKBOOK).resolve()))
+        self._events: "queue.Queue[object]" = queue.Queue()
 
         self._build_ui()
+        self.after(_POLL_MS, self._drain_events)
 
     def _build_ui(self) -> None:
         pad = {"padx": 8, "pady": 4}
@@ -51,6 +66,8 @@ class AutoPoApp(tk.Tk):
         self.log.pack(fill="both", expand=True, padx=8, pady=8)
         self.log.configure(state="disabled")
 
+    # ----- main-thread handlers -------------------------------------------
+
     def _pick_source(self) -> None:
         folder = filedialog.askdirectory(title="Select folder containing PO PDFs")
         if folder:
@@ -65,15 +82,28 @@ class AutoPoApp(tk.Tk):
         if path:
             self.workbook_var.set(path)
 
-    def _log(self, message: str) -> None:
-        self.log.configure(state="normal")
-        self.log.insert("end", message + "\n")
-        self.log.see("end")
-        self.log.configure(state="disabled")
-
     def _clear_log(self) -> None:
         self.log.configure(state="normal")
         self.log.delete("1.0", "end")
+        self.log.configure(state="disabled")
+
+    def _drain_events(self) -> None:
+        """Apply whatever the worker has posted. Main thread only."""
+        try:
+            while True:
+                event = self._events.get_nowait()
+                if event is _RUN_FINISHED:
+                    self.run_btn.configure(state="normal")
+                else:
+                    self._append_log(str(event))
+        except queue.Empty:
+            pass
+        self.after(_POLL_MS, self._drain_events)
+
+    def _append_log(self, message: str) -> None:
+        self.log.configure(state="normal")
+        self.log.insert("end", message + "\n")
+        self.log.see("end")
         self.log.configure(state="disabled")
 
     def _run(self) -> None:
@@ -87,40 +117,38 @@ class AutoPoApp(tk.Tk):
             return
 
         self.run_btn.configure(state="disabled")
-        thread = threading.Thread(target=self._run_worker, args=(source, workbook), daemon=True)
+        thread = threading.Thread(
+            target=self._run_worker, args=(source, workbook), daemon=True
+        )
         thread.start()
 
-    def _run_worker(self, source: str, workbook: str) -> None:
-        try:
-            dispatcher = Dispatcher()
-            mapper = CustomerMapper()
-            sku_lookup = build_default_sku_lookup()
-            sku_lookup.add("10001", SkuEntry("INT-0001", "ATP-1234-A10", "C123-4567"))
-            sku_lookup.add("10002", SkuEntry("INT-0002", "SKU-5678-B20", "C234-5678"))
+    # ----- worker thread ---------------------------------------------------
 
-            pdfs = sorted(p for p in Path(source).iterdir() if p.suffix.lower() == ".pdf")
+    def _post(self, message: str) -> None:
+        """Queue a line for the main thread. Safe from any thread."""
+        self._events.put(message)
+
+    def _report(self, result: FileResult) -> None:
+        if result.was_skipped:
+            self._post(f"[skip] {result.path.name}: {result.skipped}")
+        else:
+            self._post(f"[{result.customer_label:10}] {result.path.name}: "
+                       f"{result.rows} line(s), {result.matched} SKU match(es)")
+
+    def _run_worker(self, source: str, workbook: str) -> None:
+        """Runs off the main thread: no widget may be touched from here."""
+        try:
+            pdfs = collect_pdfs(source)
             if not pdfs:
-                self._log(f"No PDFs in {source}.")
+                self._post(f"No PDFs in {source}.")
                 return
 
-            total = 0
-            for pdf in pdfs:
-                try:
-                    parser_cls, rows = dispatcher.parse(str(pdf))
-                except ParserNotFound as exc:
-                    self._log(f"[skip] {pdf.name}: {exc}")
-                    continue
-                matched = enrich_rows(rows, sku_lookup, mapper)
-                append_rows(workbook, rows)
-                total += len(rows)
-                self._log(f"[{parser_cls.customer_label:10}] {pdf.name}: "
-                          f"{len(rows)} row(s), {matched} matched")
-
-            self._log(f"\nDone. Wrote {total} row(s) to {workbook}.")
+            summary = ingest(pdfs, workbook, on_file=self._report)
+            self._post(f"\nDone. Wrote {summary.total_rows} row(s) to {workbook}.")
         except Exception as exc:
-            self._log(f"Error: {exc}")
+            self._post(f"Error: {exc}")
         finally:
-            self.run_btn.configure(state="normal")
+            self._events.put(_RUN_FINISHED)
 
 
 def main() -> None:
