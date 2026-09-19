@@ -58,6 +58,33 @@ class TestCustomerA:
         assert first["CRD"] == "2025/04/07"
         assert second["CRD"] == "2025/04/21"  # Fri 2025/05/02 -> Mon 04/28 -> 04/21
 
+    def test_the_order_date_comes_from_the_po(self, tmp_path: Path):
+        pdf = build_a_pdf(
+            tmp_path / "dated.pdf",
+            [ItemA("C460-3373", "40", "1,234.56", "49,382.40", "Apr 19, 2025")],
+            po_date="2025-04-19",
+        )
+        (row,) = CustomerAParser().parse(str(pdf))
+        assert row["Customer Reference Date"] == "2025/04/19"
+
+    def test_the_delivery_date_is_not_mistaken_for_the_order_date(self, customer_a_pdf: Path):
+        # Every item carries a "Delivery date:" line; only a line that starts
+        # with "Date:" is the order date.
+        for row in CustomerAParser().parse(str(customer_a_pdf)):
+            assert row["Customer Reference Date"] == TODAY
+
+    @pytest.mark.parametrize("po_date", ["", "n/a"])
+    def test_the_order_date_falls_back_to_today(self, tmp_path: Path, po_date: str):
+        # Some POs carry no date, and some carry one nobody can read. Stamping
+        # the run date beats sending the PDF's raw text to an ERP date field.
+        pdf = build_a_pdf(
+            tmp_path / f"undated_{len(po_date)}.pdf",
+            [ItemA("C460-3373", "40", "1,234.56", "49,382.40", "Apr 19, 2025")],
+            po_date=po_date,
+        )
+        (row,) = CustomerAParser().parse(str(pdf))
+        assert row["Customer Reference Date"] == TODAY
+
     def test_crd_falls_back_to_tbd_without_a_delivery_date(self, tmp_path: Path):
         pdf = build_a_pdf(
             tmp_path / "no_date.pdf",
@@ -139,6 +166,22 @@ class TestCustomerB:
             columns=["Term", "Value"],
         )
         assert CustomerBParser().parse(str(pdf)) == []
+
+    def test_a_textual_order_date_is_understood(self, tmp_path: Path):
+        pdf = build_b_pdf(
+            tmp_path / "textual.pdf",
+            [["CB-3", "Apr 19, 2025", "C948-2452", "SKU-7919-E85", "10", "450", "USD", "2025/06/02"]],
+        )
+        (row,) = CustomerBParser().parse(str(pdf))
+        assert row["Customer Reference Date"] == "2025/04/19"
+
+    def test_an_unreadable_order_date_falls_back_to_today(self, tmp_path: Path):
+        pdf = build_b_pdf(
+            tmp_path / "bad_date.pdf",
+            [["CB-4", "see below", "C948-2452", "SKU-7919-E85", "10", "450", "USD", "2025/06/02"]],
+        )
+        (row,) = CustomerBParser().parse(str(pdf))
+        assert row["Customer Reference Date"] == TODAY
 
     def test_dmy_dates_are_understood(self, tmp_path: Path):
         pdf = build_b_pdf(

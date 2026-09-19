@@ -8,6 +8,7 @@ import pdfplumber
 from autopo.config import STANDARD_COLUMNS
 from autopo.core.normalize import (
     clean_number,
+    parse_date,
     parse_date_dmy,
     parse_date_iso,
 )
@@ -86,9 +87,12 @@ class CustomerBParser(BaseParser):
         row = dict(base)
         row[col["customer_ref"]] = get("po") or row[col["customer_ref"]]
 
+        # An unreadable PO date falls back to today, the value _common_row
+        # already put on the row -- never to the raw string, which would send
+        # whatever the PDF happened to hold into an ERP date field.
         po_date = get("po_date")
         row[col["customer_ref_date"]] = (
-            parse_date_iso(po_date) or parse_date_dmy(po_date) or po_date
+            parse_date(po_date) or row[col["customer_ref_date"]]
         )
 
         item_code = get("item_code")
