@@ -118,6 +118,7 @@ src/autopo/
 ├── cli.py                   # `python -m autopo.cli ingest ...`
 ├── gui.py                   # Tkinter front-end
 ├── core/
+│   ├── pipeline.py          # the ingest run, shared by the CLI and the GUI
 │   ├── normalize.py         # dates, numbers, key canonicalization
 │   ├── mapper.py            # customer-alias collapsing + SKU lookup
 │   └── excel_writer.py      # openpyxl writer for the Open Order workbook
@@ -130,6 +131,11 @@ src/autopo/
 
 New customers are added by dropping another `BaseParser` subclass into
 `parsers/` — the dispatcher, mapper and writer need no changes.
+
+The CLI and the GUI are thin shells over `core/pipeline.py`; they differ only
+in how they report progress. Because Tk is not thread-safe, the GUI runs the
+pipeline on a worker thread that never touches a widget — it posts messages to
+a queue that the main thread drains.
 
 ## Tests
 
@@ -144,7 +150,7 @@ With coverage:
 pytest --cov --cov-report=term-missing
 ```
 
-142 tests, 100% statement coverage of everything except the Tkinter front-end
+159 tests, 100% statement coverage of everything except the Tkinter front-end
 (which has no assertable behaviour without a display server). Every push runs
 them on Python 3.10 through 3.13 — see
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml).
@@ -156,6 +162,7 @@ them on Python 3.10 through 3.13 — see
 | `test_mapper.py`         | Customer-alias collapsing and SKU matching across inconsistent part-number spellings |
 | `test_excel_writer.py`   | Headers written once, appends accumulate, date columns formatted           |
 | `test_dispatch.py`       | Fingerprint routing, and that an unrecognised PDF is reported rather than guessed at |
+| `test_pipeline.py`       | The ingest run itself — per-file progress callbacks, skipped files, totals  |
 | `test_cli.py`            | The full `ingest` run end to end, plus its exit codes                      |
 
 Parser tests build their own PO PDFs (`tests/factories.py`) with fixed
