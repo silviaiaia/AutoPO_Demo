@@ -4,45 +4,37 @@ import argparse
 import sys
 from pathlib import Path
 
-from autopo.core.excel_writer import append_rows
-from autopo.core.mapper import CustomerMapper, enrich_rows, build_default_sku_lookup
-from autopo.parsers import Dispatcher, ParserNotFound
+from autopo.core.pipeline import (
+    DEFAULT_SHEET,
+    DEFAULT_WORKBOOK,
+    FileResult,
+    collect_pdfs,
+    ingest,
+)
+
+
+def _report(result: FileResult) -> None:
+    if result.was_skipped:
+        print(f"[skip] {result.path.name}: {result.skipped}")
+        return
+    print(f"[{result.customer_label:10}] {result.path.name}: "
+          f"{result.rows} line(s), {result.matched} SKU match(es)")
 
 
 def cmd_ingest(args: argparse.Namespace) -> int:
     source = Path(args.source)
-    if not source.exists():
+    try:
+        pdfs = collect_pdfs(source)
+    except FileNotFoundError:
         print(f"error: source path {source} does not exist", file=sys.stderr)
         return 2
 
-    pdfs = (
-        [source] if source.is_file()
-        else sorted(p for p in source.iterdir() if p.suffix.lower() == ".pdf")
-    )
     if not pdfs:
         print(f"no PDFs under {source}")
         return 1
 
-    dispatcher = Dispatcher()
-    mapper = CustomerMapper()
-    sku_lookup = build_default_sku_lookup()
-
-    total = 0
-    for pdf in pdfs:
-        try:
-            parser_cls, rows = dispatcher.parse(str(pdf))
-        except ParserNotFound as exc:
-            print(f"[skip] {pdf.name}: {exc}")
-            continue
-
-        matched = enrich_rows(rows, sku_lookup, mapper)
-        print(f"[{parser_cls.customer_label:10}] {pdf.name}: "
-              f"{len(rows)} line(s), {matched} SKU match(es)")
-
-        append_rows(args.workbook, rows, sheet_name=args.sheet)
-        total += len(rows)
-
-    print(f"\nWrote {total} row(s) to {args.workbook}")
+    summary = ingest(pdfs, args.workbook, sheet=args.sheet, on_file=_report)
+    print(f"\nWrote {summary.total_rows} row(s) to {args.workbook}")
     return 0
 
 
@@ -50,11 +42,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="autopo")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    ingest = sub.add_parser("ingest", help="parse PDFs and append to a workbook")
-    ingest.add_argument("source", help="PDF file or directory of PDFs")
-    ingest.add_argument("--workbook", default="out/open_order.xlsx")
-    ingest.add_argument("--sheet", default="OpenOrder")
-    ingest.set_defaults(func=cmd_ingest)
+    ingest_cmd = sub.add_parser("ingest", help="parse PDFs and append to a workbook")
+    ingest_cmd.add_argument("source", help="PDF file or directory of PDFs")
+    ingest_cmd.add_argument("--workbook", default=DEFAULT_WORKBOOK)
+    ingest_cmd.add_argument("--sheet", default=DEFAULT_SHEET)
+    ingest_cmd.set_defaults(func=cmd_ingest)
 
     return p
 
