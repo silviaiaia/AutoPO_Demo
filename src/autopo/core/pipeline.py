@@ -87,6 +87,12 @@ def ingest(
             parser_cls, rows = dispatcher.parse(str(pdf))
         except ParserNotFound as exc:
             result = FileResult(path=pdf, skipped=str(exc))
+        except Exception as exc:
+            # Damaged, encrypted, or a .pdf that is not one. A customer sends
+            # one of these every so often, and it must cost the operator that
+            # file rather than the whole batch -- which, before this, it did:
+            # a bad file early in the alphabet meant no workbook at all.
+            result = FileResult(path=pdf, skipped=f"{type(exc).__name__}: {exc}")
         else:
             matched = enrich_rows(rows, sku_lookup, mapper)
             append_rows(workbook, rows, sheet_name=sheet)

@@ -12,7 +12,13 @@ import pytest
 from openpyxl import load_workbook
 
 from autopo.core.pipeline import FileResult, IngestSummary, collect_pdfs, ingest
-from tests.factories import ItemA, build_a_pdf, build_b_pdf, build_plain_pdf
+from tests.factories import (
+    ItemA,
+    build_a_pdf,
+    build_b_pdf,
+    build_plain_pdf,
+    build_unreadable_pdf,
+)
 
 B_ROWS = [
     ["CB-64810", "2025/04/19", "C948-2452", "SKU-7919-E85", "59", "450", "USD", "2025/06/02"],
@@ -112,6 +118,38 @@ class TestIngest:
     def test_one_skipped_file_does_not_cost_the_others(self, inbox: Path, workbook: Path):
         build_plain_pdf(inbox / "memo.pdf")
         assert ingest(collect_pdfs(inbox), workbook).total_rows == 3
+
+    def test_a_damaged_file_is_skipped_rather_than_aborting_the_batch(
+        self, inbox: Path, workbook: Path
+    ):
+        # A truncated or encrypted PDF used to raise straight out of the loop.
+        # Since the files are processed in name order, one bad file early in
+        # the alphabet meant no workbook at all.
+        build_unreadable_pdf(inbox / "aaa_damaged.pdf")
+        summary = ingest(collect_pdfs(inbox), workbook)
+
+        assert summary.total_rows == 3
+        (skipped,) = summary.skipped
+        assert skipped.path.name == "aaa_damaged.pdf"
+
+    def test_the_skip_reason_names_the_underlying_error(
+        self, inbox: Path, workbook: Path
+    ):
+        # The operator has to be able to tell "we have no parser for this" from
+        # "this file is broken" without reading a traceback.
+        build_unreadable_pdf(inbox / "damaged.pdf")
+        build_plain_pdf(inbox / "memo.pdf")
+        reasons = {r.path.name: r.skipped for r in ingest(collect_pdfs(inbox), workbook).skipped}
+
+        assert "PdfminerException" in reasons["damaged.pdf"]
+        assert "No parser fingerprint matched" in reasons["memo.pdf"]
+
+    def test_every_good_file_after_a_damaged_one_is_still_processed(
+        self, inbox: Path, workbook: Path
+    ):
+        build_unreadable_pdf(inbox / "aaa_damaged.pdf")
+        results = ingest(collect_pdfs(inbox), workbook).results
+        assert [r.rows for r in results] == [0, 2, 1]
 
     def test_ingesting_nothing_is_not_an_error(self, workbook: Path):
         summary = ingest([], workbook)

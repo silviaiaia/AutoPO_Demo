@@ -105,6 +105,12 @@ def build_b_pdf(
     return path
 
 
+def build_unreadable_pdf(path: Path) -> Path:
+    """A file with a .pdf name that no PDF library can open."""
+    path.write_bytes(b"%PDF-1.4\nthis file was truncated in transit")
+    return path
+
+
 def build_plain_pdf(path: Path, text: str = "Just a memo, not a purchase order.") -> Path:
     """A PDF no parser fingerprint should match."""
     styles = getSampleStyleSheet()
