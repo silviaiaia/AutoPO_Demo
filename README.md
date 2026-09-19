@@ -29,26 +29,25 @@ This repository is a **sanitized public demo**. Customer names, part numbers, pr
 git clone https://github.com/silviaiaia/AutoPO_Demo.git
 cd AutoPO_Demo
 
-# This project needs Python 3.10 or newer, and macOS ships 3.9.
-python3 --version
+# macOS ships Python 3.9, which is too old for this project. This picks the
+# newest 3.10+ on your machine, so the block runs as-is -- nothing to edit.
+PY=$(command -v python3.13 || command -v python3.12 || command -v python3.11 ||
+     command -v python3.10 || echo install-python-3.10-or-newer-first)
 
-# If that printed 3.9.x, swap `python3` below for a newer one you already have
-# -- python3.12, python3.13, anything 3.10+. `brew install python@3.12` gets
-# you one.
-python3 -m venv .venv
-source .venv/bin/activate
-
-pip install --upgrade pip
-pip install -e .
-
-python samples/generate_mock_pos.py --out samples/generated
+"$PY" -m venv .venv &&
+source .venv/bin/activate &&
+pip install --upgrade pip &&
+pip install -e . &&
+python samples/generate_mock_pos.py --out samples/generated &&
 autopo ingest samples/generated/ --workbook out/open_order.xlsx
 ```
 
-If the Python version is too old, `pip install -e .` stops with
-`Package 'autopo' requires a different Python`, and the two commands after it
-then fail with `No module named 'autopo'` because nothing was installed. Start
-over from the `venv` line with a newer interpreter.
+The steps are chained with `&&` so that a failure stops there rather than
+cascading into `No module named 'autopo'` from the steps that follow it.
+
+If no suitable interpreter is found the first line fails with
+`command not found: install-python-3.10-or-newer-first`.
+`brew install python@3.12` gets you one.
 
 ### Windows (PowerShell)
 
