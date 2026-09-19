@@ -138,6 +138,15 @@ quantities, prices and dates. Quantities therefore will not sum inside Excel.
 That is the trade the import requires, and the writer's tests lock it in so a
 well-meaning change to "fix" the types fails loudly rather than at upload.
 
+A PO line is identified by the customer's PO number plus their line number,
+falling back to their part number for customers whose POs carry no line
+numbers. Re-ingesting a PO that is already in the workbook is **reported, not
+blocked** — the ERP import refuses a duplicate order at upload, so the
+gatekeeper already exists downstream; the warning only moves the news earlier.
+
+The order date is taken from the PO itself, and only falls back to the run date
+when the PDF carries no date or one nothing can parse.
+
 The CLI and the GUI are thin shells over `core/pipeline.py`; they differ only
 in how they report progress. A PDF the pipeline cannot fingerprint or cannot
 open — damaged, encrypted, or simply not a PDF — is reported and skipped, so
@@ -158,7 +167,7 @@ With coverage:
 pytest --cov --cov-report=term-missing
 ```
 
-171 tests, 100% statement coverage of everything except the Tkinter front-end
+198 tests, 100% statement coverage of everything except the Tkinter front-end
 (which has no assertable behaviour without a display server). Every push runs
 them on Python 3.10 through 3.13 — see
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml).

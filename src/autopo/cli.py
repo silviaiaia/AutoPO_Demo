@@ -19,6 +19,9 @@ def _report(result: FileResult) -> None:
         return
     print(f"[{result.customer_label:10}] {result.path.name}: "
           f"{result.rows} line(s), {result.matched} SKU match(es)")
+    if result.duplicates:
+        print(f"[warn      ] {result.path.name}: {result.duplicates} line(s) "
+              f"already in this workbook")
 
 
 def cmd_ingest(args: argparse.Namespace) -> int:
@@ -34,8 +37,15 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         return 1
 
     summary = ingest(pdfs, args.workbook, sheet=args.sheet, on_file=_report)
-    skipped = f" ({len(summary.skipped)} file(s) skipped)" if summary.skipped else ""
-    print(f"\nWrote {summary.total_rows} row(s) to {args.workbook}{skipped}")
+
+    notes = []
+    if summary.skipped:
+        notes.append(f"{len(summary.skipped)} file(s) skipped")
+    if summary.duplicates:
+        notes.append(f"{summary.duplicates} duplicate line(s)")
+    tail = f" ({', '.join(notes)})" if notes else ""
+
+    print(f"\nWrote {summary.total_rows} row(s) to {args.workbook}{tail}")
     return 0
 
 

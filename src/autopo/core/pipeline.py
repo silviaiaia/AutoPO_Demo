@@ -12,8 +12,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence, Union
 
-from autopo.core.excel_writer import append_rows
+from autopo.config import STANDARD_COLUMNS
+from autopo.core.excel_writer import append_rows, existing_rows
 from autopo.core.mapper import CustomerMapper, build_default_sku_lookup, enrich_rows
+from autopo.core.normalize import normalize_key
 from autopo.parsers import Dispatcher, ParserNotFound
 
 DEFAULT_WORKBOOK = "out/open_order.xlsx"
@@ -29,6 +31,7 @@ class FileResult:
     rows: int = 0
     matched: int = 0
     skipped: str = ""  # non-empty holds the reason the file was skipped
+    duplicates: int = 0  # lines already present in the workbook
 
     @property
     def was_skipped(self) -> bool:
@@ -46,6 +49,25 @@ class IngestSummary:
     @property
     def skipped(self) -> List[FileResult]:
         return [r for r in self.results if r.was_skipped]
+
+    @property
+    def duplicates(self) -> int:
+        return sum(r.duplicates for r in self.results)
+
+
+def line_key(row: dict) -> tuple:
+    """Identity of one PO line: the customer's PO number and their line number.
+
+    Not every customer numbers their lines -- Customer-B's POs carry no item
+    number column at all -- so the customer's part number stands in when there
+    is none, which keeps the lines of a single PO distinct from one another.
+    """
+    col = STANDARD_COLUMNS
+    reference = normalize_key(row.get(col["customer_ref"], ""))
+    item = normalize_key(row.get(col["customer_po_item"], ""))
+    if not item:
+        item = normalize_key(row.get(col["customer_material"], ""), strip_spaces=True)
+    return reference, item
 
 
 ProgressCallback = Callable[[FileResult], None]
@@ -81,6 +103,10 @@ def ingest(
     mapper = CustomerMapper()
     sku_lookup = build_default_sku_lookup()
 
+    # Read once up front, then keep it current in memory, so that a PO repeated
+    # inside this same batch is caught as well as one already on the sheet.
+    seen = {line_key(r) for r in existing_rows(workbook, sheet_name=sheet)}
+
     results: List[FileResult] = []
     for pdf in pdfs:
         try:
@@ -95,12 +121,18 @@ def ingest(
             result = FileResult(path=pdf, skipped=f"{type(exc).__name__}: {exc}")
         else:
             matched = enrich_rows(rows, sku_lookup, mapper)
+
+            keys = [line_key(r) for r in rows]
+            duplicates = sum(1 for key in keys if key in seen)
+            seen.update(keys)
+
             append_rows(workbook, rows, sheet_name=sheet)
             result = FileResult(
                 path=pdf,
                 customer_label=parser_cls.customer_label,
                 rows=len(rows),
                 matched=matched,
+                duplicates=duplicates,
             )
 
         results.append(result)

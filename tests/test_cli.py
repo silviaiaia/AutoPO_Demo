@@ -87,6 +87,23 @@ class TestIngest:
         run("ingest", str(inbox), "--workbook", str(workbook))
         assert load_workbook(workbook)["OpenOrder"].max_row == 7
 
+    def test_a_second_run_warns_about_every_repeated_line(
+        self, inbox: Path, workbook: Path, capsys
+    ):
+        run("ingest", str(inbox), "--workbook", str(workbook))
+        capsys.readouterr()
+        run("ingest", str(inbox), "--workbook", str(workbook))
+
+        out = capsys.readouterr().out
+        assert "[warn      ] customer_a.pdf: 2 line(s) already in this workbook" in out
+        assert "(3 duplicate line(s))" in out
+
+    def test_a_first_run_says_nothing_about_duplicates(
+        self, inbox: Path, workbook: Path, capsys
+    ):
+        run("ingest", str(inbox), "--workbook", str(workbook))
+        assert "duplicate" not in capsys.readouterr().out
+
 
 class TestUnhappyPaths:
     def test_unrecognised_pdf_is_skipped_without_failing_the_batch(
